@@ -19,13 +19,30 @@ pipeline {
 
           stage("Docker build") {
                steps {
-                    sh "docker build -t <username>/calculator ."
+                    sh "docker build -t jesquivel/calculator ."
                }
           }
           stage("Docker push") {
                steps {
-                    sh "docker push <username>/calculator"
+                    sh "docker push jesquivel/calculator"
                }
           }
+          
+          stage("Deploy to staging") { 
+               steps { 
+                    sh "docker run -d --rm -p 8765:8081 --name calculator jesquivel/calculator" 
+               } 
+          }
+          stage("Acceptance test") { 
+               steps { 
+                    sleep 60 
+                    sh "./gradlew acceptanceTest -Dcalculator.url=http://localhost:8765"
+               } 
+          }
+     }
+     post { 
+          always { 
+               sh "docker stop calculator" 
+          } 
      }
 }
